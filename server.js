@@ -2573,15 +2573,7 @@ async function qqSmartboxSearch(keywords, limit) {
 
 async function qqSongDetail(mid, fallback) {
   if (!mid) return fallback;
-  // 免费源优先：Huibq 直接拿完整 QQ CDN URL
-  try {
-    var _fq = await freeSource.getPlayUrl({ source: "tx", songId: songmid, quality: requestedQuality === "standard" ? "128k" : "320k" });
-    if (_fq && _fq.url) {
-      console.log("[QQ free] ->", _fq.url.slice(0,60));
-      return { provider: "qq", url: _fq.url, trial: false, playable: true, level: _fq.quality, quality: "QQ免费源", requestedQuality: requestedQuality };
-    }
-  } catch(_e) { console.log("[QQ free]", _e.message); }
-  const json = await qqMusicRequest({
+const json = await qqMusicRequest({
     comm: { ct: 24, cv: 0 },
     songinfo: {
       module: 'music.pf_song_detail_svr',
@@ -2661,6 +2653,14 @@ async function handleQQSearch(keywords, limit) {
 async function handleQQSongUrl(mid, mediaMid, qualityPreference) {
   const songmid = String(mid || '').trim();
   if (!songmid) return { provider: 'qq', url: '', error: 'MISSING_MID', message: 'Missing QQ song mid' };
+  // Huibq 免费源直接拿完整 QQ CDN URL
+  try {
+    var _fq = await freeSource.getPlayUrl({ source: "tx", songId: songmid, quality: requestedQuality === "standard" ? "128k" : "320k" });
+    if (_fq && _fq.url) {
+      console.log("[QQ free] ->", _fq.url.slice(0,60));
+      return { provider: "qq", url: _fq.url, trial: false, playable: true, level: _fq.quality, quality: "QQ免费源", requestedQuality: requestedQuality };
+    }
+  } catch(_e) { console.log("[QQ free]", _e.message); }
   const guid = String(10000000 + Math.floor(Math.random() * 90000000));
   const cookieObj = qqCookieObject();
   const uin = qqCookieUin(cookieObj) || '0';
