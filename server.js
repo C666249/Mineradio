@@ -2655,10 +2655,10 @@ async function handleQQSongUrl(mid, mediaMid, qualityPreference) {
   if (!songmid) return { provider: 'qq', url: '', error: 'MISSING_MID', message: 'Missing QQ song mid' };
   // Huibq 免费源直接拿完整 QQ CDN URL
   try {
-    var _fq = await freeSource.getPlayUrl({ source: "tx", songId: songmid, quality: requestedQuality === "standard" ? "128k" : "320k" });
+    var _fq = await freeSource.getPlayUrl({ source: "tx", songId: songmid, quality: (qualityPreference && qualityPreference === "standard") ? "128k" : "320k" });
     if (_fq && _fq.url) {
       console.log("[QQ free] ->", _fq.url.slice(0,60));
-      return { provider: "qq", url: _fq.url, trial: false, playable: true, level: _fq.quality, quality: "QQ免费源", requestedQuality: requestedQuality };
+      return { provider: "qq", url: _fq.url, trial: false, playable: true, level: _fq.quality, quality: "QQ免费源", requestedQuality: qualityPreference };
     }
   } catch(_e) { console.log("[QQ free]", _e.message); }
   const guid = String(10000000 + Math.floor(Math.random() * 90000000));
