@@ -3095,7 +3095,7 @@ async function handleSongUrl(id, loginInfo, qualityPreference) {
       console.log('[SongUrl]', q.level, 'failed:', err.message);
     }
   }
-  // 免费源兜底：QQ跨源搜索 + Huibq完整播放
+  // 免费源兜底
   try { var _q = requestedQuality === "standard" ? "128k" : "320k";
     var _d = await song_detail({ ids: String(id), cookie: userCookie });
     var _s = _d.body && _d.body.songs && _d.body.songs[0];
