@@ -53,6 +53,7 @@ const tls = require('tls');
 const { once } = require('events');
 const { fileURLToPath } = require('url');
 const { analyzePodcastDjStream, analyzePodcastDjIntro } = require('./dj-analyzer');
+const freeSource = require('./freeSource');
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -2572,6 +2573,14 @@ async function qqSmartboxSearch(keywords, limit) {
 
 async function qqSongDetail(mid, fallback) {
   if (!mid) return fallback;
+  // 免费源优先：Huibq 直接拿完整 QQ CDN URL
+  try {
+    var _fq = await freeSource.getPlayUrl({ source: "tx", songId: songmid, quality: requestedQuality === "standard" ? "128k" : "320k" });
+    if (_fq && _fq.url) {
+      console.log("[QQ free] ->", _fq.url.slice(0,60));
+      return { provider: "qq", url: _fq.url, trial: false, playable: true, level: _fq.quality, quality: "QQ免费源", requestedQuality: requestedQuality };
+    }
+  } catch(_e) { console.log("[QQ free]", _e.message); }
   const json = await qqMusicRequest({
     comm: { ct: 24, cv: 0 },
     songinfo: {
@@ -3086,6 +3095,19 @@ async function handleSongUrl(id, loginInfo, qualityPreference) {
       console.log('[SongUrl]', q.level, 'failed:', err.message);
     }
   }
+  // 免费源兜底：QQ跨源搜索 + Huibq完整播放
+  try { var _q = requestedQuality === "standard" ? "128k" : "320k";
+    var _d = await song_detail({ ids: String(id), cookie: userCookie });
+    var _s = _d.body && _d.body.songs && _d.body.songs[0];
+    if (_s) { var _kw = (_s.name||"") + " " + (_s.ar||[]).map(function(a){return a.name;}).join(" ");
+      var _qq = await freeSource.qqSearch({ keywords: _kw.trim(), limit: 3 });
+      if (_qq.length>0) { var _fu = await freeSource.getPlayUrl({ source: "tx", songId: _qq[0].id, quality: _q });
+        if (_fu && _fu.url) { console.log("[free] ->",_fu.url.slice(0,60));
+          return { url:_fu.url, trial:false, playable:true, level:_fu.quality, quality:"QQ免费源", br:320000, requestedQuality:requestedQuality };
+        }
+      }
+    }
+  } catch(_e) { console.log("[free]",_e.message); }
   if (trialFallback) return trialFallback;
   const restriction = classifyNeteasePlaybackRestriction(lastData, loginInfo);
   return {
