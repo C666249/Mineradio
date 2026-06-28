@@ -2809,6 +2809,8 @@ var homeWeatherLoadPromise = null;
 var weatherRadioStartBusy = false;
 var activeRadioContext = null;
 var homeWeatherCurrentQuote = null;
+var homeWeatherRotationTimer = null;
+var homeWeatherLyricToken = 0;
 var listenStatsState = loadListenStatsState();
 var listenSession = null;
 var appPerfMarks = [];
@@ -15615,11 +15617,36 @@ function renderWeatherHero() {
       if(mt)mt.textContent="聆听天气";
       if(mg)mg.textContent=homeWeatherRadioState.error?"天气服务暂不可用":"暂无天气数据";
     }
-    // random lyric — dynamic pool (queue/recommend/weather) + static fallback
+    // random lyric — mixed pool (static quotes + dynamic songs) with async lyric fetch
     if(ly){
+      var staticQuotes=[
+        {l:"十年之前，我不认识你，你不属于我",a:"陈奕迅",s:"十年"},
+        {l:"得不到的永远在骚动，被偏爱的都有恃无恐",a:"陈奕迅",s:"红玫瑰"},
+        {l:"好久不见，你还好吗",a:"陈奕迅",s:"好久不见"},
+        {l:"我以为要是唱得用心良苦，你总会对我多点在乎",a:"陈奕迅",s:"K歌之王"},
+        {l:"陪你把沿路感想活出了答案",a:"陈奕迅",s:"陪你度过漫长岁月"},
+        {l:"最美的不是下雨天，是曾与你躲过雨的屋檐",a:"周杰伦",s:"不能说的秘密"},
+        {l:"我想就这样牵着你的手不放开",a:"周杰伦",s:"简单爱"},
+        {l:"雨下整夜，我的爱溢出就像雨水",a:"周杰伦",s:"七里香"},
+        {l:"从前从前，有个人爱你很久",a:"周杰伦",s:"晴天"},
+        {l:"你说把爱渐渐放下会走更远",a:"周杰伦",s:"不能说的秘密"},
+        {l:"我一路向北，离开有你的季节",a:"周杰伦",s:"一路向北"},
+        {l:"你就是我的唯一，两个世界都变形",a:"王力宏",s:"唯一"},
+        {l:"你是我心内的一首歌，心间开起花一朵",a:"王力宏",s:"你是我心内的一首歌"},
+        {l:"爱你不是因为你的美而已",a:"王力宏",s:"Forever Love"},
+        {l:"情人总分分合合，可是我们却越爱越深",a:"王力宏",s:"我们的歌"},
+        {l:"爱很简单，忘了是怎么开始",a:"陶喆",s:"爱很简单"},
+        {l:"就是爱你爱着你，不弃不离",a:"陶喆",s:"就是爱你"},
+        {l:"今天你要嫁给我，明天你要嫁给我",a:"陶喆 / 蔡依林",s:"今天你要嫁给我"},
+        {l:"你问我爱你有多深，我爱你有几分",a:"陶喆",s:"月亮代表谁的心"},
+        {l:"小镇姑娘，你就像天使一样",a:"陶喆",s:"小镇姑娘"}
+      ];
+      // Build combined pool: static quotes + dynamic songs
+      for (var i = 0; i < staticQuotes.length; i++) { staticQuotes[i]._static = true; }
+      var pool = staticQuotes.slice();
       var seen = {};
-      var pool = [];
-      function addToPool(list, max) {
+      for (var i = 0; i < pool.length; i++) { seen[(pool[i].s||"").trim()] = true; }
+      function addDynamic(list, max) {
         if (!list || !list.length) return;
         for (var i = 0; i < Math.min(list.length, max || 5); i++) {
           var s = list[i];
@@ -15627,44 +15654,21 @@ function renderWeatherHero() {
           var key = (s.name || "").trim();
           if (!key || seen[key]) continue;
           seen[key] = true;
-          pool.push({ a: s.artist, s: s.name, dynamic: true });
+          pool.push({ a: s.artist, s: s.name, _dynamic: true, _song: s });
         }
       }
       try {
-        addToPool(playQueue, 10);
-        addToPool(homeDiscoverState && homeDiscoverState.songs, 5);
-        addToPool(homeWeatherRadioState.radio && homeWeatherRadioState.radio.songs, 5);
+        addDynamic(playQueue, 10);
+        addDynamic(homeDiscoverState && homeDiscoverState.songs, 5);
+        addDynamic(homeWeatherRadioState.radio && homeWeatherRadioState.radio.songs, 5);
       } catch(e) {}
-      if (pool.length) {
-        var q = pool[Math.floor(Math.random() * pool.length)];
-        homeWeatherCurrentQuote = q;
-        ly.innerHTML='《'+q.s+'》<br><span style="font-size:11px;color:rgba(255,255,255,.35);font-style:normal;letter-spacing:.5px">— '+q.a+'</span>';
+      var q = pool[Math.floor(Math.random() * pool.length)];
+      homeWeatherCurrentQuote = q;
+      if (q._static) {
+        ly.innerHTML='“'+q.l+'”<br><span style="font-size:11px;color:rgba(255,255,255,.35);font-style:normal;letter-spacing:.5px">— '+q.a+' 《'+q.s+'》</span>';
       } else {
-        var quotes=[
-          {l:"十年之前，我不认识你，你不属于我",a:"陈奕迅",s:"十年"},
-          {l:"得不到的永远在骚动，被偏爱的都有恃无恐",a:"陈奕迅",s:"红玫瑰"},
-          {l:"好久不见，你还好吗",a:"陈奕迅",s:"好久不见"},
-          {l:"我以为要是唱得用心良苦，你总会对我多点在乎",a:"陈奕迅",s:"K歌之王"},
-          {l:"陪你把沿路感想活出了答案",a:"陈奕迅",s:"陪你度过漫长岁月"},
-          {l:"最美的不是下雨天，是曾与你躲过雨的屋檐",a:"周杰伦",s:"不能说的秘密"},
-          {l:"我想就这样牵着你的手不放开",a:"周杰伦",s:"简单爱"},
-          {l:"雨下整夜，我的爱溢出就像雨水",a:"周杰伦",s:"七里香"},
-          {l:"从前从前，有个人爱你很久",a:"周杰伦",s:"晴天"},
-          {l:"你说把爱渐渐放下会走更远",a:"周杰伦",s:"不能说的秘密"},
-          {l:"我一路向北，离开有你的季节",a:"周杰伦",s:"一路向北"},
-          {l:"你就是我的唯一，两个世界都变形",a:"王力宏",s:"唯一"},
-          {l:"你是我心内的一首歌，心间开起花一朵",a:"王力宏",s:"你是我心内的一首歌"},
-          {l:"爱你不是因为你的美而已",a:"王力宏",s:"Forever Love"},
-          {l:"情人总分分合合，可是我们却越爱越深",a:"王力宏",s:"我们的歌"},
-          {l:"爱很简单，忘了是怎么开始",a:"陶喆",s:"爱很简单"},
-          {l:"就是爱你爱着你，不弃不离",a:"陶喆",s:"就是爱你"},
-          {l:"今天你要嫁给我，明天你要嫁给我",a:"陶喆 / 蔡依林",s:"今天你要嫁给我"},
-          {l:"你问我爱你有多深，我爱你有几分",a:"陶喆",s:"月亮代表谁的心"},
-          {l:"小镇姑娘，你就像天使一样",a:"陶喆",s:"小镇姑娘"}
-        ];
-        var q = quotes[Math.floor(Math.random() * quotes.length)];
-        homeWeatherCurrentQuote = q;
-        ly.innerHTML='"'+q.l+'"<br><span style="font-size:11px;color:rgba(255,255,255,.35);font-style:normal;letter-spacing:.5px">— '+q.a+' 《'+q.s+'》</span>';
+        ly.innerHTML='《'+q.s+'》<br><span style="font-size:11px;color:rgba(255,255,255,.35);font-style:normal;letter-spacing:.5px">— '+q.a+'</span>';
+        fetchLyricLine(q, ++homeWeatherLyricToken);
       }
     }
   } catch(e) { console.warn("renderWeatherHero:",e); }
@@ -15716,6 +15720,41 @@ function playWeatherLyric(){
     showToast("搜索失败，请重试");
     if(btn) btn.style.pointerEvents = "";
   });
+}
+
+function fetchLyricLine(q, token) {
+  if (!q || !q._song) return;
+  var song = q._song;
+  var provider = typeof songProviderKey === 'function' ? songProviderKey(song) : (song.provider === 'qq' || song.source === 'qq' ? 'qq' : 'netease');
+  var endpoint;
+  if (provider === 'qq') {
+    var mid = song.mid || song.songmid || song.id || '';
+    var qqId = song.qqId || (/^\d+$/.test(String(song.id || '')) ? song.id : '');
+    endpoint = '/api/qq/lyric?mid=' + encodeURIComponent(mid) + '&id=' + encodeURIComponent(qqId);
+  } else {
+    endpoint = '/api/lyric?id=' + encodeURIComponent(song.id || '');
+  }
+  apiJson(endpoint).then(function(r){
+    if (token !== homeWeatherLyricToken) return;
+    var lrcText = r && (r.lyric || r.tlyric || '');
+    if (!lrcText) return;
+    var parsed = typeof parseLyricText === 'function' ? parseLyricText(lrcText) : [];
+    if (!parsed.length) return;
+    var texts = [];
+    for (var i = 0; i < parsed.length; i++) {
+      var t = (parsed[i].text || '').trim();
+      if (!t) continue;
+      if (typeof isNoLyricText === 'function' && isNoLyricText(t)) continue;
+      texts.push(t);
+    }
+    if (!texts.length) return;
+    var line = texts[Math.floor(Math.random() * texts.length)];
+    q.l = line;
+    var ly = document.getElementById('weather-lyric-line');
+    if (ly && homeWeatherCurrentQuote === q) {
+      ly.innerHTML='“'+line+'”<br><span style="font-size:11px;color:rgba(255,255,255,.35);font-style:normal;letter-spacing:.5px">— '+q.a+' 《'+q.s+'》</span>';
+    }
+  }).catch(function(e){ console.warn('fetchLyricLine:', e); });
 }
 
 function renderHomeDiscover() {
@@ -16156,11 +16195,13 @@ function updateEmptyHomeVisibility(opts) {
   document.body.classList.toggle('empty-home-active', show);
   if (!show) setHomeControlsLocked(false);
   if (show) activateHomeWallpaperPreview();
-  else deactivateHomeWallpaperPreview(false);
+  else { deactivateHomeWallpaperPreview(false); if (homeWeatherRotationTimer) { clearInterval(homeWeatherRotationTimer); homeWeatherRotationTimer = null; } }
   if (show) {
     setPeek(document.getElementById('search-area'), true, 'search');
     renderHomeDiscover();
     scheduleHomeWeatherLoad(opts.forceLoad ? 1400 : 2400);
+    if (homeWeatherRotationTimer) { clearInterval(homeWeatherRotationTimer); }
+    homeWeatherRotationTimer = setInterval(function(){ renderWeatherHero(); }, 5000);
     if (!hasAnyPlatformLogin()) {
       homeDiscoverState.loading = false;
       homeDiscoverState.loaded = true;
