@@ -250,7 +250,7 @@ body.home-wallpaper-preview #canvas-container{filter:none}
 .home-hero-inner.home-weather-inner{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:12px;padding:4px 2px;min-height:100%}
 .weather-city-pill{cursor:pointer;transition:all .18s}
 .weather-city-pill:hover{border-color:color-mix(in srgb,var(--home-accent) 38%,rgba(255,255,255,.20));color:#fff}
-.home-weather-lyric{grid-column:1;margin-top:auto;padding-top:18px;font-size:14px;color:rgba(255,255,255,.55);font-style:italic;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.home-weather-lyric{grid-column:1;margin-top:auto;padding-top:18px;font-size:14px;line-height:1.55;color:rgba(255,255,255,.55);font-style:italic;letter-spacing:.3px;max-width:100%}
 .home-weather-glow{grid-column:1;width:100%;height:2px;margin-top:10px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(125,216,255,.68),rgba(0,245,212,.72),rgba(125,216,255,.68),transparent);background-size:200% 100%;animation:glow-breathe 2.6s ease-in-out infinite,glow-flow 4.4s linear infinite;opacity:.60}
 .home-hero:has(.home-weather-inner)::after{display:none}
 @keyframes glow-breathe{0%,100%{opacity:.30;filter:blur(0px)}50%{opacity:.86;filter:blur(1.2px)}}
@@ -15613,14 +15613,32 @@ function renderWeatherHero() {
       if(mt)mt.textContent="聆听天气";
       if(mg)mg.textContent=homeWeatherRadioState.error?"天气服务暂不可用":"暂无天气数据";
     }
-    // random lyric
+    // random lyric — curated love song quotes
     if(ly){
-      var pool=[];
-      try{
-        if(playQueue&&playQueue.length){for(var i=0;i<Math.min(playQueue.length,10);i++){var s=playQueue[i];if(s&&s.name&&s.artist)pool.push({t:s.name,a:s.artist});}}
-        if(homeDiscoverState&&homeDiscoverState.songs){var ds=homeDiscoverState.songs;for(var i=0;i<Math.min(ds.length,5);i++){var s=ds[i];if(s&&s.name&&s.artist)pool.push({t:s.name,a:s.artist});}}
-      }catch(e){}
-      if(pool.length){var p=pool[Math.floor(Math.random()*pool.length)];ly.textContent="“"+p.t+"” — "+p.a;}
+      var quotes=[
+        {l:"十年之前，我不认识你，你不属于我",a:"陈奕迅",s:"十年"},
+        {l:"得不到的永远在骚动，被偏爱的都有恃无恐",a:"陈奕迅",s:"红玫瑰"},
+        {l:"好久不见，你还好吗",a:"陈奕迅",s:"好久不见"},
+        {l:"我以为要是唱得用心良苦，你总会对我多点在乎",a:"陈奕迅",s:"K歌之王"},
+        {l:"陪你把沿路感想活出了答案",a:"陈奕迅",s:"陪你度过漫长岁月"},
+        {l:"最美的不是下雨天，是曾与你躲过雨的屋檐",a:"周杰伦",s:"不能说的秘密"},
+        {l:"我想就这样牵着你的手不放开",a:"周杰伦",s:"简单爱"},
+        {l:"雨下整夜，我的爱溢出就像雨水",a:"周杰伦",s:"七里香"},
+        {l:"从前从前，有个人爱你很久",a:"周杰伦",s:"晴天"},
+        {l:"你说把爱渐渐放下会走更远",a:"周杰伦",s:"不能说的秘密"},
+        {l:"我一路向北，离开有你的季节",a:"周杰伦",s:"一路向北"},
+        {l:"你就是我的唯一，两个世界都变形",a:"王力宏",s:"唯一"},
+        {l:"你是我心内的一首歌，心间开起花一朵",a:"王力宏",s:"你是我心内的一首歌"},
+        {l:"爱你不是因为你的美而已",a:"王力宏",s:"Forever Love"},
+        {l:"情人总分分合合，可是我们却越爱越深",a:"王力宏",s:"我们的歌"},
+        {l:"爱很简单，忘了是怎么开始",a:"陶喆",s:"爱很简单"},
+        {l:"就是爱你爱着你，不弃不离",a:"陶喆",s:"就是爱你"},
+        {l:"今天你要嫁给我，明天你要嫁给我",a:"陶喆 / 蔡依林",s:"今天你要嫁给我"},
+        {l:"你问我爱你有多深，我爱你有几分",a:"陶喆",s:"月亮代表谁的心"},
+        {l:"小镇姑娘，你就像天使一样",a:"陶喆",s:"小镇姑娘"}
+      ];
+      var q=quotes[Math.floor(Math.random()*quotes.length)];
+      ly.innerHTML="“"+q.l+"”<br><span style="font-size:11px;color:rgba(255,255,255,.35);font-style:normal;letter-spacing:.5px">— "+q.a+" 《"+q.s+"》</span>";
     }
   } catch(e) { console.warn("renderWeatherHero:",e); }
 }
