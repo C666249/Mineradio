@@ -15600,7 +15600,7 @@ function renderWeatherHero() {
       var pool=[];
       try{
         if(playQueue&&playQueue.length){for(var i=0;i<Math.min(playQueue.length,10);i++){var s=playQueue[i];if(s&&s.name&&s.artist)pool.push({t:s.name,a:s.artist});}}
-        if(homeDiscoverState&&homeDiscoverState.songs){var ds=homeDiscoverState.dailySongs;for(var i=0;i<Math.min(ds.length,5);i++){var s=ds[i];if(s&&s.name&&s.artist)pool.push({t:s.name,a:s.artist});}}
+        if(homeDiscoverState&&homeDiscoverState.songs){var ds=homeDiscoverState.songs;for(var i=0;i<Math.min(ds.length,5);i++){var s=ds[i];if(s&&s.name&&s.artist)pool.push({t:s.name,a:s.artist});}}
       }catch(e){}
       if(pool.length){var p=pool[Math.floor(Math.random()*pool.length)];ly.textContent="“"+p.t+"” — "+p.a;}
     }
@@ -15913,6 +15913,11 @@ function changeWeatherCity() {
   homeWeatherRadioState.loaded = false;
   loadHomeWeatherRadio(true, { city: city });
 }
+(function autoLocate(){
+  if(!localStorage.getItem(HOME_WEATHER_CITY_KEY)){
+    setTimeout(function(){ try{locateWeatherRadio();}catch(e){} }, 1200);
+  }
+})();
 function shouldShowEmptyHomeCore(ignoreSplash) {
   if (!ignoreSplash && document.body.classList.contains('splash-active')) return false;
   if (immersiveMode) return false;
