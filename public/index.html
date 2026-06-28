@@ -251,7 +251,8 @@ body.home-wallpaper-preview #canvas-container{filter:none}
 .weather-city-pill{cursor:pointer;transition:all .18s}
 .weather-city-pill:hover{border-color:color-mix(in srgb,var(--home-accent) 38%,rgba(255,255,255,.20));color:#fff}
 .home-weather-lyric{grid-column:1;margin-top:auto;padding-top:18px;font-size:14px;color:rgba(255,255,255,.55);font-style:italic;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.home-weather-glow{grid-column:1;width:72%;height:2px;margin-top:10px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(125,216,255,.68),rgba(0,245,212,.72),rgba(125,216,255,.68),transparent);background-size:200% 100%;animation:glow-breathe 2.6s ease-in-out infinite,glow-flow 4.4s linear infinite;opacity:.60}
+.home-weather-glow{grid-column:1;width:100%;height:2px;margin-top:10px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(125,216,255,.68),rgba(0,245,212,.72),rgba(125,216,255,.68),transparent);background-size:200% 100%;animation:glow-breathe 2.6s ease-in-out infinite,glow-flow 4.4s linear infinite;opacity:.60}
+.home-hero:has(.home-weather-inner)::after{display:none}
 @keyframes glow-breathe{0%,100%{opacity:.30;filter:blur(0px)}50%{opacity:.86;filter:blur(1.2px)}}
 @keyframes glow-flow{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .weather-city-popup{position:absolute;z-index:20;bottom:58px;left:0;display:flex;gap:6px;align-items:center;padding:8px 10px;border-radius:16px;background:rgba(14,16,20,.94);border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 40px rgba(0,0,0,.44),0 0 20px rgba(125,216,255,.08);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
@@ -16330,7 +16331,9 @@ function isHomeBlankDismissClick(e) {
     '.modal',
     '.track-detail-modal',
     '.cover-color-pop',
-    '.color-lab-pop'
+    '.color-lab-pop',
+    '.weather-city-pill',
+    '.weather-city-popup'
   ].join(',');
   if (target.closest(blockedSelector)) return false;
   var x = e.clientX;
