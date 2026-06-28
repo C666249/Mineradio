@@ -15638,7 +15638,7 @@ function renderWeatherHero() {
         {l:"小镇姑娘，你就像天使一样",a:"陶喆",s:"小镇姑娘"}
       ];
       var q=quotes[Math.floor(Math.random()*quotes.length)];
-      ly.innerHTML="“"+q.l+"”<br><span style="font-size:11px;color:rgba(255,255,255,.35);font-style:normal;letter-spacing:.5px">— "+q.a+" 《"+q.s+"》</span>";
+      ly.innerHTML='“'+q.l+'”<br><span style="font-size:11px;color:rgba(255,255,255,.35);font-style:normal;letter-spacing:.5px">— '+q.a+' 《'+q.s+'》</span>';
     }
   } catch(e) { console.warn("renderWeatherHero:",e); }
 }
