@@ -15698,16 +15698,29 @@ function playWeatherLyric(){
     var songs = (data && data.songs) || [];
     if(!songs.length){ showToast("未找到: "+keywords); if(btn) btn.style.pointerEvents = ""; return; }
     var song = cloneSong(songs[0]);
-    homeForcedOpen = false;
-    homeSuppressed = false;
     setHomeControlsLocked(false);
-    playQueue = [song];
-    currentIdx = 0;
+    // Insert at front of existing queue (same pattern as playSearchResult)
+    if (!playQueue.length) {
+      playQueue.unshift(song);
+      currentIdx = 0;
+    } else {
+      var matchIdx = -1;
+      var targetKey = queueItemKey(song);
+      for (var j = 0; j < playQueue.length; j++) {
+        if (queueItemKey(playQueue[j]) === targetKey) { matchIdx = j; break; }
+      }
+      if (matchIdx >= 0) {
+        currentIdx = moveQueueIndexToTop(matchIdx);
+      } else {
+        playQueue.unshift(song);
+        currentIdx = 0;
+      }
+    }
     safeRenderQueuePanel("weather-lyric");
     safeShelfRebuild("weather-lyric", true);
     forcePlaybackControlsInteractive();
-    updateEmptyHomeVisibility();
-    playQueueAt(0).then(function(){
+    // note: playQueueAt internally calls updateEmptyHomeVisibility + homeForcedOpen/homeSuppressed
+    playQueueAt(currentIdx).then(function(){
       showToast("正在播放: " + (song.name||"") + " — " + (song.artist||""));
     }).catch(function(e){
       console.warn("playWeatherLyric:", e);
