@@ -250,7 +250,8 @@ body.home-wallpaper-preview #canvas-container{filter:none}
 .home-hero-inner.home-weather-inner{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:12px;padding:4px 2px;min-height:100%}
 .weather-city-pill{cursor:pointer;transition:all .18s}
 .weather-city-pill:hover{border-color:color-mix(in srgb,var(--home-accent) 38%,rgba(255,255,255,.20));color:#fff}
-.home-weather-lyric{grid-column:1;margin-top:auto;padding-top:18px;font-size:14px;line-height:1.55;color:rgba(255,255,255,.55);font-style:italic;letter-spacing:.3px;max-width:100%}
+.home-weather-lyric{grid-column:1;margin-top:auto;padding-top:18px;font-size:14px;line-height:1.55;color:rgba(255,255,255,.55);font-style:italic;letter-spacing:.3px;max-width:100%;cursor:pointer;transition:color .18s}
+.home-weather-lyric:hover{color:rgba(255,255,255,.82)}
 .home-weather-glow{grid-column:1;width:100%;height:2px;margin-top:10px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(125,216,255,.68),rgba(0,245,212,.72),rgba(125,216,255,.68),transparent);background-size:200% 100%;animation:glow-breathe 2.6s ease-in-out infinite,glow-flow 4.4s linear infinite;opacity:.60}
 .home-hero:has(.home-weather-inner)::after{display:none}
 @keyframes glow-breathe{0%,100%{opacity:.30;filter:blur(0px)}50%{opacity:.86;filter:blur(1.2px)}}
@@ -1960,7 +1961,7 @@ html.control-glass-svg-ok #visual-guide-btn:hover{
             <button class="home-chip" type="button" id="weather-play-btn" onclick="playWeatherRadio()">生成天气歌单</button>
             <button class="home-chip" type="button" onclick="openHomePlayerConsole()" style="background:rgba(255,255,255,.030);color:rgba(255,255,255,.40)">控制台</button>
           </div>
-          <div class="home-weather-lyric" id="weather-lyric-line" title="最近常听"></div>
+          <div class="home-weather-lyric" id="weather-lyric-line" title="点击播放这首歌" onclick="event.stopPropagation();playWeatherLyric();"></div>
           <div class="home-weather-glow" id="weather-glow-bar"></div>
           <div class="weather-city-popup" id="weather-city-popup" style="display:none" onclick="event.stopPropagation()">
             <input class="weather-city-input" id="weather-city-input" type="text" placeholder="输入城市名…" autocomplete="off" onkeydown="if(event.key==='Enter')confirmWeatherCity()">
@@ -2807,6 +2808,7 @@ var homeWeatherLoadTimer = null;
 var homeWeatherLoadPromise = null;
 var weatherRadioStartBusy = false;
 var activeRadioContext = null;
+var homeWeatherCurrentQuote = null;
 var listenStatsState = loadListenStatsState();
 var listenSession = null;
 var appPerfMarks = [];
@@ -15638,6 +15640,7 @@ function renderWeatherHero() {
         {l:"小镇姑娘，你就像天使一样",a:"陶喆",s:"小镇姑娘"}
       ];
       var q=quotes[Math.floor(Math.random()*quotes.length)];
+      homeWeatherCurrentQuote = q;
       ly.innerHTML='“'+q.l+'”<br><span style="font-size:11px;color:rgba(255,255,255,.35);font-style:normal;letter-spacing:.5px">— '+q.a+' 《'+q.s+'》</span>';
     }
   } catch(e) { console.warn("renderWeatherHero:",e); }
@@ -15654,6 +15657,41 @@ function playWeatherRadio(){
       showToast((st.radio.title||"天气电台")+" · "+playQueue.length+" 首");
     }else{showToast("天气电台暂无歌曲");}
   }).catch(function(){weatherRadioStartBusy=false;if(btn){btn.textContent="生成天气歌单";btn.disabled=false;}showToast("天气电台启动失败");});
+}
+
+function playWeatherLyric(){
+  var q = homeWeatherCurrentQuote;
+  if(!q) return;
+  var btn = document.getElementById("weather-lyric-line");
+  if(btn) btn.style.pointerEvents = "none";
+  var keywords = (q.a||"") + " " + (q.s||"");
+  showToast("正在搜索: "+keywords+"…");
+  apiJson("/api/qq/search?keywords=" + encodeURIComponent(keywords) + "&limit=3").then(function(data){
+    var songs = (data && data.songs) || [];
+    if(!songs.length){ showToast("未找到: "+keywords); if(btn) btn.style.pointerEvents = ""; return; }
+    var song = cloneSong(songs[0]);
+    homeForcedOpen = false;
+    homeSuppressed = false;
+    setHomeControlsLocked(false);
+    playQueue = [song];
+    currentIdx = 0;
+    safeRenderQueuePanel("weather-lyric");
+    safeShelfRebuild("weather-lyric", true);
+    forcePlaybackControlsInteractive();
+    updateEmptyHomeVisibility();
+    playQueueAt(0).then(function(){
+      showToast("正在播放: " + (song.name||"") + " — " + (song.artist||""));
+    }).catch(function(e){
+      console.warn("playWeatherLyric:", e);
+      showToast("播放失败");
+    }).then(function(){
+      if(btn) btn.style.pointerEvents = "";
+    });
+  }).catch(function(e){
+    console.warn("playWeatherLyric search:", e);
+    showToast("搜索失败，请重试");
+    if(btn) btn.style.pointerEvents = "";
+  });
 }
 
 function renderHomeDiscover() {
@@ -16351,7 +16389,8 @@ function isHomeBlankDismissClick(e) {
     '.cover-color-pop',
     '.color-lab-pop',
     '.weather-city-pill',
-    '.weather-city-popup'
+    '.weather-city-popup',
+    '.home-weather-lyric'
   ].join(',');
   if (target.closest(blockedSelector)) return false;
   var x = e.clientX;
