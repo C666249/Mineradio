@@ -15699,9 +15699,9 @@ function playWeatherLyric(){
     if(!songs.length){ showToast("未找到: "+keywords); if(btn) btn.style.pointerEvents = ""; return; }
     var song = cloneSong(songs[0]);
     setHomeControlsLocked(false);
-    // Insert at front of existing queue (same pattern as playSearchResult)
+    // Insert right after the currently playing song (next-up), don't disrupt the queue
     if (!playQueue.length) {
-      playQueue.unshift(song);
+      playQueue.push(song);
       currentIdx = 0;
     } else {
       var matchIdx = -1;
@@ -15709,11 +15709,17 @@ function playWeatherLyric(){
       for (var j = 0; j < playQueue.length; j++) {
         if (queueItemKey(playQueue[j]) === targetKey) { matchIdx = j; break; }
       }
+      var insertAt = currentIdx >= 0 ? currentIdx + 1 : playQueue.length;
       if (matchIdx >= 0) {
-        currentIdx = moveQueueIndexToTop(matchIdx);
+        // Already in queue: move to right after current song
+        var removed = playQueue.splice(matchIdx, 1)[0];
+        if (matchIdx < insertAt) insertAt--;
+        playQueue.splice(insertAt, 0, removed);
+        currentIdx = insertAt;
       } else {
-        playQueue.unshift(song);
-        currentIdx = 0;
+        // New song: insert after current
+        playQueue.splice(insertAt, 0, song);
+        currentIdx = insertAt;
       }
     }
     safeRenderQueuePanel("weather-lyric");
