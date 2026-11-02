@@ -57,8 +57,8 @@ public final class MainActivity extends Activity {
             new AlertDialog.Builder(this)
                 .setTitle("开启全局指尖控制环")
                 .setMessage("ArcDock 可在其他 App 上显示一条细小的边缘把手。滑入后选择快捷项，松手即可执行。需要你手动授予悬浮窗权限；随时可以在 ArcDock 中关闭。")
-                .setPositiveButton("开启全局控制环",(d,w)->enableOverlay())
-                .setNegativeButton("暂时只在应用内使用",(d,w)->{}).show();
+                .setPositiveButton("开启全局控制环",(dialog,which)->enableOverlay())
+                .setNegativeButton("暂时只在应用内使用",(dialog,which)->{}).show();
         }
     }
     private android.content.SharedPreferences prefs(){return getSharedPreferences("arcdock",MODE_PRIVATE);}
