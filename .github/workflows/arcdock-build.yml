@@ -14,12 +14,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-      - name: Install Android 35
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Install Android SDK 35 using runner's existing command-line tools
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build installable APK
         run: gradle --no-daemon :app:assembleDebug
       - uses: actions/upload-artifact@v4
@@ -36,5 +37,5 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" ArcDock-v0.1.0-debug.apk --clobber
           else
-            gh release create "$TAG" ArcDock-v0.1.0-debug.apk --target "$GITHUB_SHA" --title "ArcDock v0.1.0 (Android APK)" --notes "ArcDock Android preview. Debug-signed APK. Built by GitHub Actions on an isolated temporary branch. This release is an ArcDock build, not a Mineradio app update."
+            gh release create "$TAG" ArcDock-v0.1.0-debug.apk --target "$GITHUB_SHA" --title "ArcDock v0.1.0 (Android APK)" --notes "ArcDock Android preview. Debug-signed APK. Built by GitHub Actions from a temporary isolated branch. Not a Mineradio app update."
           fi
