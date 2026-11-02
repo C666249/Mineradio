@@ -1,4 +1,4 @@
-name: ArcDock v0.1.0 - Build and Publish APK
+name: ArcDock v1.0.0 - Build and Publish APK
 on:
   push:
     branches: [arcdock-cloud-v010]
@@ -26,17 +26,17 @@ jobs:
         run: gradle --no-daemon :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: ArcDock-v0.1.0-debug-apk
+          name: ArcDock-v1.0.0-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
       - name: Publish direct-download APK to public GitHub Releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="arcdock-v0.1.0"
+          TAG="arcdock-v1.0.0"
           APK="app/build/outputs/apk/debug/app-debug.apk"
-          cp "$APK" ArcDock-v0.1.0-debug.apk
+          cp "$APK" ArcDock-v1.0.0-debug.apk
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" ArcDock-v0.1.0-debug.apk --clobber
+            gh release upload "$TAG" ArcDock-v1.0.0-debug.apk --clobber
           else
-            gh release create "$TAG" ArcDock-v0.1.0-debug.apk --target "$GITHUB_SHA" --title "ArcDock v0.1.0 (Android APK)" --notes "ArcDock Android preview. Debug-signed APK. Built by GitHub Actions from a temporary isolated branch. Not a Mineradio app update."
+            gh release create "$TAG" ArcDock-v1.0.0-debug.apk --target "$GITHUB_SHA" --title "ArcDock v1.0.0 · Global Edge Launcher" --notes "ArcDock v1.0.0 Android global floating radial shortcut launcher. Debug-signed, offline APK; fully separate from Mineradio. Grant overlay permission to enable."
           fi
